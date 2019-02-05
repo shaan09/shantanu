@@ -1,0 +1,68 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: dockdemomvcapp-deployment
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dockdemomvcapp
+    spec:
+      containers:
+      - name: dockdemomvcapp
+        image: containerregistrycsaad.azurecr.io/dockdemomvcapp:v1
+        ports:
+        - containerPort: 44300
+          name: redis
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dockdemomvcapp-service
+spec:
+  ports:
+  - port: 44300
+  selector:
+    app: dockdemomvcapp
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: dockdemomvcapp-deployment2
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      labels:
+        app: dockdemomvcapp
+    spec:
+      containers:
+      - name: dockdemomvcapp
+        image: containerregistrycsaad.azurecr.io/dockdemomvcapp:v1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+        env:
+        - name: REDIS
+          value: "dockdemomvcapp"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dockdemomvcapp-service2
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: dockdemomvcapp
